@@ -1,3 +1,5 @@
+from ast import Pass
+from gc import get_objects
 import pickle
 import numpy as np
 import pandas as pd
@@ -16,8 +18,22 @@ def load_uniprot_data():
 
 def clean_description_string(string_):
     string_ = string_.replace('"', '')
-    string_ = string_.replace('GOC:ai', '')
     return string_
+
+def seperate_goterm_based_on_ontology(goterm_list,onto):
+    final_goterm_list=[]
+    for go in goterm_list:
+        go = go.strip()
+        try:
+            go_details= gene_onto[go]
+            if(go_details['namespace']==onto):
+                final_goterm_list.append(go)
+            else:
+                print(go)
+                print(go_details['namespace'])
+        except:
+            print("Did exception happened?")
+    return final_goterm_list
 
 
 
@@ -37,19 +53,36 @@ def get_goterm_defination(go_term_list):
             errored_go_term.append(go)
     return doc_defination
 
-def main():
-    with open('ProteinAndItsDescriptionCombinedTab.csv','w' ,newline='', encoding='utf-8') as output_csvfile:
+
+def prepare_gos(goterm_list):
+    return ';'.join(goterm_list)
+
+
+
+def prepare_dataset(filename,onto):
+    with open(filename+str(onto)+".tab",'w' ,newline='', encoding='utf-8') as output_csvfile:
         spamwriter = csv.writer(output_csvfile, delimiter='\t')
         list_=[]
-        list_.extend(['Protein','Goterms', 'GO Description','Uniprot Description'])
+        list_.extend(['Protein','Goterms', 'GO Description'])
         spamwriter.writerow(list_)
         df = load_uniprot_data()
         for index,row in df.iterrows():
             print(index)
             gos=row['GOTerm_IDs']
-            goaDefination= get_goterm_defination(gos.split(";"))
-            uniProtDefination= row['Uniprot_Desc']
-            spamwriter.writerow([index,gos,goaDefination,uniProtDefination])
+            goterm_list=seperate_goterm_based_on_ontology(gos.split(";"),onto)
+            print(goterm_list)
+            if(len(goterm_list)>0):
+                goaDefination= get_goterm_defination(goterm_list)
+                # uniProtDefination= row['Uniprot_Desc']
+                spamwriter.writerow([index,prepare_gos(goterm_list),goaDefination])
+
+def main():
+    prepare_dataset('ProteinDesctiption',"biological_process")
+    prepare_dataset('ProteinDesctiption',"cellular_component")
+    prepare_dataset('ProteinDesctiption',"molecular_function")
+
+    
+            
 
 
 

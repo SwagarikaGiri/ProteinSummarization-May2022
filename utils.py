@@ -30,6 +30,8 @@ def gene_ontology(filename='go_new.obo'):
                     obj['is_a'].append(l[1].split(' ! ')[0])
                 elif l[0] == 'name':
                     obj['name'] = l[1]
+                elif l[0] == 'namespace':
+                    obj['namespace'] = l[1]
                 elif l[0] == 'is_obsolete' and l[1] == 'true':
                     obj['is_obsolete'] = True
     if obj is not None:
